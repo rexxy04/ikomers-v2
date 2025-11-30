@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { Search, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { auth } from "@/lib/firebase"; // Import Auth
-import { onAuthStateChanged, User } from "firebase/auth"; // Import listener User
+import { auth } from "@/lib/firebase"; 
+import { onAuthStateChanged, User } from "firebase/auth"; 
 
 export default function Header() {
+  // ... (State user & loading BIARKAN SAMA seperti sebelumnya) ...
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Cek status login user secara real-time
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -20,13 +20,7 @@ export default function Header() {
     return () => unsubscribe();
   }, []);
 
-  // Tentukan Nama & Avatar
-  // Jika belum login, tampilkan "Tamu"
   const displayName = user?.displayName || "Tamu";
-  
-  // Logic Avatar:
-  // 1. Jika user punya foto (dari Google), pakai itu.
-  // 2. Jika tidak, pakai Dicebear dengan seed nama user biar unik.
   const avatarUrl = user?.photoURL 
     ? user.photoURL 
     : `https://api.dicebear.com/9.x/avataaars/svg?seed=${displayName}`;
@@ -37,33 +31,27 @@ export default function Header() {
       <Link href={user ? "/profile" : "/login"} className="flex items-center gap-3 group">
         <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-100 group-hover:border-yellow-400 transition-colors">
           {!loading && (
-            <Image 
-              src={avatarUrl} 
-              alt="User Avatar" 
-              fill 
-              className="object-cover"
-            />
+            <Image src={avatarUrl} alt="User Avatar" fill className="object-cover" />
           )}
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-bold text-gray-900 leading-tight group-hover:text-yellow-600 transition-colors">
             {loading ? "..." : `Halo, ${displayName}`}
           </span>
-          <span className="text-[11px] text-gray-500">
-            {user ? "Selamat belanja!" : "Klik untuk login"}
-          </span>
+          <span className="text-xs text-gray-500">Ayo mulai belanja</span>
         </div>
       </Link>
 
       {/* Kanan: Icons */}
       <div className="flex items-center gap-3">
-        <button className="p-2 text-gray-700 hover:bg-gray-50 rounded-full transition-colors">
+        
+        {/* UPDATE DISINI: Ganti Button Search jadi Link */}
+        <Link href="/search" className="p-2 text-gray-700 hover:bg-gray-50 rounded-full transition-colors">
           <Search size={20} />
-        </button>
+        </Link>
         
         <Link href="/cart" className="p-2 text-gray-700 hover:bg-gray-50 rounded-full transition-colors relative">
           <ShoppingBag size={20} />
-          {/* Badge merah opsional jika ingin dikembangkan nanti */}
         </Link>
       </div>
     </header>
