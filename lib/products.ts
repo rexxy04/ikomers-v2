@@ -60,3 +60,18 @@ export async function getProductById(id: string): Promise<Product | null> {
     return null;
   }
 }
+
+export async function searchProducts(keyword: string): Promise<Product[]> {
+  // Ambil semua produk dulu (Firestore client SDK akan meng-cache ini, jadi tetap cepat)
+  // Untuk skala besar nanti bisa pakai Algolia/ElasticSearch, tapi untuk MVP ini sudah cukup.
+  const products = await getProducts();
+  
+  if (!keyword) return products;
+
+  const lowerKeyword = keyword.toLowerCase();
+
+  return products.filter((product) => 
+    product.title.toLowerCase().includes(lowerKeyword) || 
+    product.category.toLowerCase().includes(lowerKeyword)
+  );
+}
