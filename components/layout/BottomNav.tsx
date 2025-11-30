@@ -19,7 +19,11 @@ export default function BottomNav() {
   
   // Cek apakah pathname saat ini ada di daftar hiddenPaths
   // Atau jika pathname diawali dengan "/product/" (Halaman detail produk biasanya tidak pakai bottom nav utama)
-  const isHidden = hiddenPaths.includes(pathname) || pathname.startsWith("/product/");
+    const isHidden = 
+      hiddenPaths.includes(pathname) || 
+      pathname.startsWith("/product/") || 
+      pathname.startsWith("/chat/") ||
+      pathname.startsWith("/admin");
 
   if (isHidden) return null; // Jangan render apa-apa
 
