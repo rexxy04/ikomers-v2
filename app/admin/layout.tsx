@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation"; // Tambah usePathname untuk highlight menu aktif
+import { useRouter, usePathname } from "next/navigation"; 
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
-import { LayoutDashboard, Package, ShoppingBag, LogOut, User } from "lucide-react";
+// TAMBAHAN: Import MessageCircle untuk icon chat
+import { LayoutDashboard, Package, ShoppingBag, LogOut, User, MessageCircle } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,16 +19,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        router.push("/login"); // Belum login -> Tendang ke Login
+        router.push("/login"); 
       } else {
         try {
-          // Cek Role di Database
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists() && userDoc.data().role === "admin") {
-            setIsAdmin(true); // Lolos!
+            setIsAdmin(true); 
           } else {
             alert("Akses Ditolak! Area ini khusus Admin.");
-            router.push("/"); // User biasa -> Tendang ke Home Toko
+            router.push("/"); 
           }
         } catch (error) {
           console.error("Error checking role:", error);
@@ -44,7 +44,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Helper untuk styling menu aktif
   const getLinkClass = (path: string) => {
-    const isActive = pathname === path;
+    // Logic agar /admin/chat/123 tetap menyalakan menu /admin/chat
+    const isActive = pathname === path || pathname.startsWith(`${path}/`);
+    
     return `flex items-center gap-3 p-3 rounded-xl font-bold transition-all ${
       isActive 
         ? "bg-yellow-50 text-yellow-600 shadow-sm" 
@@ -78,6 +80,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           
           <Link href="/admin/orders" className={getLinkClass("/admin/orders")}>
             <ShoppingBag size={20} /> Pesanan
+          </Link>
+
+          {/* MENU BARU: CHAT */}
+          <Link href="/admin/chat" className={getLinkClass("/admin/chat")}>
+            <MessageCircle size={20} /> Chat Pelanggan
           </Link>
         </nav>
 

@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Minus, Plus, Star } from "lucide-react";
+import { Minus, Plus, Star, MessageCircle } from "lucide-react"; // Icon Chat
 import ReviewCard from "./ReviewCard";
 import type { Product } from "@/lib/products";
 import { useProductDetail } from "@/hooks/useProductDetail";
 import Button from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
+import { getOrCreateChatRoom, sendMessage } from "@/lib/chat"; // Import Logic Chat
 
 // --- Sub-Komponen ---
 
@@ -30,39 +32,19 @@ const ColorSelector = ({ colors, selected, onSelect }: any) => (
   </div>
 );
 
-// UPDATE DISINI: Menerima props 'stock' (angka)
 const QuantityControl = ({ qty, stock, onChange }: { qty: number, stock: number, onChange: (type: "inc" | "dec") => void }) => {
   const isOutOfStock = stock === 0;
-
   return (
     <div className="flex flex-col items-end">
       <div className={`flex items-center rounded-full px-1 py-1 gap-1 transition-colors ${isOutOfStock ? 'bg-gray-100' : 'bg-yellow-50 border border-yellow-200'}`}>
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => onChange("dec")} 
-          disabled={isOutOfStock}
-          className="rounded-full hover:bg-yellow-200 w-8 h-8"
-        >
+        <Button variant="ghost" size="icon" onClick={() => onChange("dec")} disabled={isOutOfStock} className="rounded-full hover:bg-yellow-200 w-8 h-8">
           <Minus size={14} strokeWidth={3} />
         </Button>
-        
         <span className="w-8 text-center text-sm font-bold text-black">{isOutOfStock ? 0 : qty}</span>
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => onChange("inc")} 
-          // Disable jika stok habis ATAU jumlah beli sudah sama dengan sisa stok
-          disabled={isOutOfStock || qty >= stock}
-          className="rounded-full hover:bg-yellow-200 w-8 h-8"
-        >
+        <Button variant="ghost" size="icon" onClick={() => onChange("inc")} disabled={isOutOfStock || qty >= stock} className="rounded-full hover:bg-yellow-200 w-8 h-8">
           <Plus size={14} strokeWidth={3} />
         </Button>
-
       </div>
-      {/* TAMPILKAN ANGKA STOK DISINI */}
       <span className={`text-[10px] mt-1 font-medium ${!isOutOfStock ? 'text-gray-500' : 'text-red-500'}`}>
         {!isOutOfStock ? `Sisa stok: ${stock}` : "Stok Habis"}
       </span>
@@ -70,18 +52,50 @@ const QuantityControl = ({ qty, stock, onChange }: { qty: number, stock: number,
   );
 };
 
-// --- Komponen Utama ---
-
 const REVIEWS = [
   { id: 1, name: "Irgi", rating: 5, comment: "Barang bagus!" },
   { id: 2, name: "Fadhil", rating: 4, comment: "Pengiriman oke." },
 ];
 
+// --- Main Component ---
+
 export default function ProductView({ product }: { product: Product }) {
+  const router = useRouter();
   const { 
-    qty, selectedColor, setSelectedColor, isSubmitting, 
+    user, qty, selectedColor, setSelectedColor, isSubmitting, 
     currentStock, isOutOfStock, handleQtyChange, handleAddToCart 
   } = useProductDetail(product);
+
+  // LOGIC MULAI CHAT
+  const handleChat = async () => {
+    if (!user) {
+      alert("Silakan Login terlebih dahulu untuk chat.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      // 1. Buat/Ambil Room Chat
+      const chatId = await getOrCreateChatRoom(user.uid, user.displayName || "Pembeli");
+      
+      // 2. Kirim Pesan Konteks Produk (Otomatis)
+      const context = {
+        id: product.id,
+        title: product.title,
+        image: product.image,
+        price: product.priceString
+      };
+      
+      // Param isAdmin = false (karena ini user)
+      await sendMessage(chatId, user.uid, "Halo Admin, saya mau tanya stok untuk produk ini.", false, context);
+
+      // 3. Redirect ke halaman chat
+      router.push(`/chat/${chatId}`);
+    } catch (error) {
+      console.error(error);
+      alert("Gagal membuka chat.");
+    }
+  };
 
   return (
     <div className="relative bg-[#F3F4F6] min-h-screen">
@@ -104,8 +118,6 @@ export default function ProductView({ product }: { product: Product }) {
               <span className="text-sm text-gray-400">(120 review)</span>
             </div>
           </div>
-          
-          {/* Pass 'currentStock' (angka) ke komponen QuantityControl */}
           <QuantityControl qty={qty} stock={currentStock} onChange={handleQtyChange} />
         </div>
 
@@ -127,13 +139,24 @@ export default function ProductView({ product }: { product: Product }) {
       </div>
 
       {/* 3. Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-gray-100 px-6 py-4 pb-8 z-40 flex items-center justify-between">
-        <div className="flex flex-col">
+      <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-gray-100 px-6 py-4 pb-8 z-40 flex items-center gap-3">
+        
+        {/* TOMBOL CHAT */}
+        <Button 
+          variant="outline" 
+          className="w-14 px-0 border-gray-300"
+          onClick={handleChat}
+          disabled={isSubmitting}
+        >
+          <MessageCircle size={24} className="text-gray-700" />
+        </Button>
+
+        <div className="flex-1 flex flex-col pl-2">
           <span className="text-xs text-gray-400">Harga</span>
-          <span className="text-xl font-bold text-gray-900">{product.priceString}</span>
+          <span className="text-lg font-bold text-gray-900">{product.priceString}</span>
         </div>
         
-        <div className="w-[60%]">
+        <div className="w-[50%]">
           <Button 
             fullWidth
             onClick={handleAddToCart}
@@ -142,7 +165,7 @@ export default function ProductView({ product }: { product: Product }) {
             variant={isOutOfStock ? "ghost" : "primary"}
             className={isOutOfStock ? "bg-gray-200 text-gray-400 cursor-not-allowed hover:bg-gray-200" : ""}
           >
-            {isOutOfStock ? "Stok Habis" : "Tambah ke Keranjang"}
+            {isOutOfStock ? "Stok Habis" : "Tambah"}
           </Button>
         </div>
       </div>
