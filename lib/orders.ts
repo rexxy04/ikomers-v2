@@ -1,4 +1,10 @@
 import { db } from "@/lib/firebase";
+import { storage } from "@/lib/firebase";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
 import { 
   collection, 
   addDoc, 
@@ -9,7 +15,8 @@ import {
   increment, // Penting untuk stok
   query,     // <-- Perbaikan: Import query
   where,     
-  orderBy    // <-- Perbaikan: Import orderBy
+  orderBy,
+  updateDoc  // <-- Perbaikan: Import orderBy
 } from "firebase/firestore";
 import { CartItem } from "./cart";
 
@@ -100,6 +107,30 @@ export async function createOrder(userId: string, items: CartItem[], totals: Ord
     return newOrderRef.id;
   } catch (error) {
     console.error("Error creating order:", error);
+    throw error;
+  }
+}
+
+// FUNGSI BARU: Upload Bukti Bayar
+export async function uploadPaymentProof(orderId: string, file: File) {
+  try {
+    // 1. Upload Gambar ke Storage
+    // Path: payment_proofs/ORDER_ID.jpg
+    const storageRef = ref(storage, `payment_proofs/${orderId}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+
+    // 2. Update Dokumen Order
+    const orderRef = doc(db, "orders", orderId);
+    await updateDoc(orderRef, {
+      paymentProof: downloadURL,
+      status: "verifikasi", // Status baru: Menunggu Verifikasi Admin
+      updatedAt: serverTimestamp() // Update timestamp
+    });
+
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading proof:", error);
     throw error;
   }
 }
