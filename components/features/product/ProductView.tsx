@@ -1,13 +1,15 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react"; 
 import Image from "next/image";
-import { Minus, Plus, Star, MessageCircle } from "lucide-react"; // Icon Chat
+import { Minus, Plus, Star, MessageCircle } from "lucide-react"; 
 import ReviewCard from "./ReviewCard";
 import type { Product } from "@/lib/products";
 import { useProductDetail } from "@/hooks/useProductDetail";
 import Button from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
-import { getOrCreateChatRoom, sendMessage } from "@/lib/chat"; // Import Logic Chat
+import { getOrCreateChatRoom, sendMessage } from "@/lib/chat"; 
+import { subscribeToProductReviews, ReviewData } from "@/lib/reviews"; // Import Listener Review
 
 // --- Sub-Komponen ---
 
@@ -52,11 +54,6 @@ const QuantityControl = ({ qty, stock, onChange }: { qty: number, stock: number,
   );
 };
 
-const REVIEWS = [
-  { id: 1, name: "Irgi", rating: 5, comment: "Barang bagus!" },
-  { id: 2, name: "Fadhil", rating: 4, comment: "Pengiriman oke." },
-];
-
 // --- Main Component ---
 
 export default function ProductView({ product }: { product: Product }) {
@@ -66,30 +63,40 @@ export default function ProductView({ product }: { product: Product }) {
     currentStock, isOutOfStock, handleQtyChange, handleAddToCart 
   } = useProductDetail(product);
 
-  // LOGIC MULAI CHAT
+  // STATE REVIEW REALTIME
+  const [reviews, setReviews] = useState<ReviewData[]>([]);
+
+  // Subscribe Review saat halaman dibuka
+  useEffect(() => {
+    const unsubscribe = subscribeToProductReviews(product.id, (data) => {
+      setReviews(data);
+    });
+    return () => unsubscribe();
+  }, [product.id]);
+
+  // Hitung Rata-rata Bintang
+  const averageRating = useMemo(() => {
+    if (reviews.length === 0) return 0;
+    const total = reviews.reduce((sum, rev) => sum + rev.rating, 0);
+    return (total / reviews.length).toFixed(1); // 1 desimal (contoh: 4.5)
+  }, [reviews]);
+
+  // Logic Chat
   const handleChat = async () => {
     if (!user) {
       alert("Silakan Login terlebih dahulu untuk chat.");
       router.push("/login");
       return;
     }
-
     try {
-      // 1. Buat/Ambil Room Chat
       const chatId = await getOrCreateChatRoom(user.uid, user.displayName || "Pembeli");
-      
-      // 2. Kirim Pesan Konteks Produk (Otomatis)
       const context = {
         id: product.id,
         title: product.title,
         image: product.image,
         price: product.priceString
       };
-      
-      // Param isAdmin = false (karena ini user)
       await sendMessage(chatId, user.uid, "Halo Admin, saya mau tanya stok untuk produk ini.", false, context);
-
-      // 3. Redirect ke halaman chat
       router.push(`/chat/${chatId}`);
     } catch (error) {
       console.error(error);
@@ -112,11 +119,18 @@ export default function ProductView({ product }: { product: Product }) {
         <div className="flex justify-between items-start mb-2">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{product.title}</h1>
+            
+            {/* RATING DINAMIS */}
             <div className="flex items-center gap-2 mt-1">
               <Star size={16} className="text-yellow-400 fill-yellow-400" />
-              <span className="text-sm font-bold text-gray-900">4.9</span>
-              <span className="text-sm text-gray-400">(120 review)</span>
+              <span className="text-sm font-bold text-gray-900">
+                {averageRating || "Baru"}
+              </span>
+              <span className="text-sm text-gray-400">
+                ({reviews.length} review)
+              </span>
             </div>
+
           </div>
           <QuantityControl qty={qty} stock={currentStock} onChange={handleQtyChange} />
         </div>
@@ -130,18 +144,32 @@ export default function ProductView({ product }: { product: Product }) {
           <p className="text-sm text-gray-500 leading-relaxed">{product.description || "Tidak ada deskripsi."}</p>
         </div>
 
+        {/* LIST REVIEW REALTIME */}
         <div className="mt-8">
-          <h3 className="text-base font-bold text-gray-900 mb-3">Review</h3>
-          <div className="flex overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar snap-x">
-            {REVIEWS.map((r) => <div key={r.id} className="snap-center"><ReviewCard {...r} /></div>)}
-          </div>
+          <h3 className="text-base font-bold text-gray-900 mb-3">Review ({reviews.length})</h3>
+          
+          {reviews.length === 0 ? (
+             <p className="text-sm text-gray-400 italic">Belum ada ulasan untuk produk ini.</p>
+          ) : (
+            <div className="flex overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar snap-x gap-3">
+              {reviews.map((r) => (
+                <div key={r.id} className="snap-center min-w-[280px]">
+                   {/* Kita kirim props sesuai data Firestore ke ReviewCard */}
+                   {/* Pastikan ReviewCard menerima: name, rating, comment */}
+                   <ReviewCard 
+                      name={r.userName} // Mapping userName -> name
+                      rating={r.rating}
+                      comment={r.comment}
+                   />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* 3. Sticky Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-gray-100 px-6 py-4 pb-8 z-40 flex items-center gap-3">
-        
-        {/* TOMBOL CHAT */}
         <Button 
           variant="outline" 
           className="w-14 px-0 border-gray-300"
