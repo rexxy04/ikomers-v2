@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { LogOut, MapPin, ShoppingBag, User as UserIcon } from "lucide-react";
+import { LogOut, MapPin, ShoppingBag, User as UserIcon, Settings } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import ProfileMenu from "@/components/features/profile/ProfileMenu";
@@ -61,7 +61,7 @@ export default function ProfilePage() {
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Akun Saya</h2>
         
         {/* Link ke Halaman Edit Profile (Nanti dibuat jika sempat) */}
-        {/* <ProfileMenu icon={UserIcon} label="Edit Profil" href="/profile/edit" /> */}
+        <ProfileMenu icon={UserIcon} label="Edit Profil" href="/profile/edit" />
 
         {/* Link ke Riwayat Pesanan (Nanti dibuat) */}
         <ProfileMenu icon={ShoppingBag} label="Pesanan Saya" href="/orders" />

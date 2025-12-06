@@ -1,6 +1,6 @@
 import LoginForm from "@/components/features/auth/LoginForm";
 import Link from "next/link";
-// import Image from "next/image"; // Uncomment nanti jika gambar sudah ada
+import Image from "next/image"; // Pastikan Image diimport
 
 export default function LoginPage() {
   return (
@@ -8,29 +8,17 @@ export default function LoginPage() {
       {/* 1. Header Text */}
       <h1 className="text-lg font-bold text-gray-900 mb-4">LOGIN</h1>
 
-      {/* 2. Illustration Placeholder */}
+      {/* 2. Illustration (UPDATED) */}
       <div className="flex justify-center mb-8">
-        {/* Placeholder Box: Ganti div ini dengan <Image> nanti */}
-        <div className="w-48 h-48 bg-gray-100 rounded-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 text-gray-400">
-          <span className="text-4xl mb-2">🖼️</span>
-          <span className="text-[10px] text-center px-4">
-             Area Ilustrasi <br/>
-             (Upload ke /public/images/)
-          </span>
+        <div className="relative w-64 h-64"> {/* Sesuaikan ukuran container jika perlu */}
+          <Image
+            src="/login.png" // Aset dari folder public
+            alt="Login Illustration"
+            fill
+            className="object-contain"
+            priority // Agar gambar dimuat duluan (karena di atas layar)
+          />
         </div>
-
-        {/* --- KODE UNTUK NANTI (Jika gambar sudah ada) ---
-          Pastikan file ada di folder: ikomers-v2/public/images/login-illust.png
-          
-          <div className="relative w-48 h-48">
-            <Image
-              src="/images/login-illust.png" 
-              alt="Login Illustration"
-              fill
-              className="object-contain"
-            />
-          </div>
-        */}
       </div>
 
       {/* 3. Title Section */}
