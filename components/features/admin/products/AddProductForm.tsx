@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Trash2, UploadCloud } from "lucide-react";
+import { X, Plus, Trash2, UploadCloud, CheckSquare, Square } from "lucide-react";
 import { createProduct, ProductFormState } from "@/lib/admin-products";
+
 
 interface Props {
   onSuccess: () => void;
@@ -19,6 +20,7 @@ export default function AddProductForm({ onSuccess, onCancel }: Props) {
     colors: [],
     stock: 0,
     imageFile: null,
+    isFeatured: false,
   });
 
   // State lokal untuk input warna sementara
@@ -105,8 +107,6 @@ export default function AddProductForm({ onSuccess, onCancel }: Props) {
             </div>
           </div>
 
-
-
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Deskripsi</label>
             <textarea required className="w-full p-3 border rounded-xl h-24" placeholder="Jelaskan produk..." 
@@ -143,6 +143,28 @@ export default function AddProductForm({ onSuccess, onCancel }: Props) {
               <button type="button" onClick={handleAddColor} className="bg-gray-900 text-white p-2 rounded-lg">
                 <Plus size={20} />
               </button>
+            </div>
+          </div>
+
+          {/* --- TAMBAHAN BARU: TOGGLE FEATURED --- */}
+          <div 
+            onClick={() => setForm({ ...form, isFeatured: !form.isFeatured })}
+            className={`p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition-colors ${
+              form.isFeatured ? "bg-yellow-50 border-yellow-400" : "bg-gray-50 border-gray-200"
+            }`}
+          >
+            {form.isFeatured ? (
+              <CheckSquare className="text-yellow-600" />
+            ) : (
+              <Square className="text-gray-400" />
+            )}
+            <div>
+              <p className={`font-bold text-sm ${form.isFeatured ? "text-yellow-800" : "text-gray-500"}`}>
+                Jadikan Banner Utama (Hero)
+              </p>
+              <p className="text-xs text-gray-400">
+                Produk ini akan muncul di slider halaman depan.
+              </p>
             </div>
           </div>
 
