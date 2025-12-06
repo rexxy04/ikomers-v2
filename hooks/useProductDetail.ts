@@ -4,11 +4,12 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { addToCart } from "@/lib/cart";
 import { Product } from "@/lib/products";
+// Import Toaster
+import toast from "react-hot-toast";
 
 export function useProductDetail(product: Product) {
   const router = useRouter();
   
-  // State
   const [user, setUser] = useState<User | null>(null);
   const [qty, setQty] = useState(1);
   const [selectedColor, setSelectedColor] = useState(
@@ -16,17 +17,14 @@ export function useProductDetail(product: Product) {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Data Derived
   const currentStock = product.stock || 0;
-  const isOutOfStock = currentStock === 0; // <--- SUDAH DIPERBAIKI (Tidak ada spasi)
+  const isOutOfStock = currentStock === 0;
 
-  // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
 
-  // Logic Handlers
   const handleQtyChange = (type: "inc" | "dec") => {
     if (type === "dec" && qty > 1) setQty(prev => prev - 1);
     if (type === "inc" && qty < currentStock) setQty(prev => prev + 1);
@@ -34,7 +32,8 @@ export function useProductDetail(product: Product) {
 
   const handleAddToCart = async () => {
     if (!user) {
-      alert("Silakan Login terlebih dahulu!");
+      // GANTI ALERT JADI TOAST ERROR
+      toast.error("Silakan Login terlebih dahulu!", { icon: '🔒' });
       router.push("/login");
       return;
     }
@@ -44,10 +43,11 @@ export function useProductDetail(product: Product) {
     setIsSubmitting(true);
     try {
       await addToCart(user.uid, product, selectedColor, qty);
-      alert("Berhasil masuk keranjang! 🛒");
+      // GANTI ALERT JADI TOAST SUKSES
+      toast.success("Berhasil masuk keranjang! 🛒");
     } catch (error) {
       console.error(error);
-      alert("Gagal menambahkan ke keranjang.");
+      toast.error("Gagal menambahkan ke keranjang.");
     } finally {
       setIsSubmitting(false);
     }

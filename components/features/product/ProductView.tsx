@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react"; 
 import Image from "next/image";
-// 1. PASTIKAN MessageCircle ADA DI SINI
 import { Minus, Plus, Star, MessageCircle } from "lucide-react"; 
+// Import Toaster
+import toast from "react-hot-toast"; 
+
 import ReviewCard from "./ReviewCard";
 import type { Product } from "@/lib/products";
 import { useProductDetail } from "@/hooks/useProductDetail";
@@ -64,10 +66,8 @@ export default function ProductView({ product }: { product: Product }) {
     currentStock, isOutOfStock, handleQtyChange, handleAddToCart 
   } = useProductDetail(product);
 
-  // STATE REVIEW REALTIME
   const [reviews, setReviews] = useState<ReviewData[]>([]);
 
-  // Subscribe Review
   useEffect(() => {
     const unsubscribe = subscribeToProductReviews(product.id, (data) => {
       setReviews(data);
@@ -75,17 +75,17 @@ export default function ProductView({ product }: { product: Product }) {
     return () => unsubscribe();
   }, [product.id]);
 
-  // Hitung Rata-rata
   const averageRating = useMemo(() => {
     if (reviews.length === 0) return 0;
     const total = reviews.reduce((sum, rev) => sum + rev.rating, 0);
     return (total / reviews.length).toFixed(1);
   }, [reviews]);
 
-  // Logic Chat
+  // Logic Chat dengan Toaster
   const handleChat = async () => {
     if (!user) {
-      alert("Silakan Login terlebih dahulu untuk chat.");
+      // GANTI ALERT JADI TOAST
+      toast.error("Silakan Login terlebih dahulu untuk chat.", { icon: '🔒' });
       router.push("/login");
       return;
     }
@@ -101,7 +101,7 @@ export default function ProductView({ product }: { product: Product }) {
       router.push(`/chat/${chatId}`);
     } catch (error) {
       console.error(error);
-      alert("Gagal membuka chat.");
+      toast.error("Gagal membuka chat.");
     }
   };
 
@@ -153,7 +153,7 @@ export default function ProductView({ product }: { product: Product }) {
           ) : (
             <div className="flex overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar snap-x gap-3">
               {reviews.map((r) => (
-                <div key={r.id} className="snap-center min-w-[280px]">
+                <div key={r.id || Math.random()} className="snap-center min-w-[280px]">
                    <ReviewCard 
                       name={r.userName} 
                       rating={r.rating}
@@ -169,14 +169,12 @@ export default function ProductView({ product }: { product: Product }) {
       {/* 3. Sticky Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-gray-100 px-6 py-4 pb-8 z-40 flex items-center gap-3">
         
-        {/* TOMBOL CHAT */}
         <Button 
           variant="outline" 
           className="w-14 px-0 border-gray-300"
           onClick={handleChat}
           disabled={isSubmitting}
         >
-          {/* Ikon MessageCircle */}
           <MessageCircle size={24} className="text-gray-700" />
         </Button>
 

@@ -1,5 +1,6 @@
 import RegisterForm from "@/components/features/auth/RegisterForm";
 import Link from "next/link";
+import Image from "next/image"; // Pastikan Image diimport
 
 export default function RegisterPage() {
   return (
@@ -7,15 +8,16 @@ export default function RegisterPage() {
       {/* 1. Header Text */}
       <h1 className="text-lg font-bold text-gray-900 mb-4">DAFTAR</h1>
 
-      {/* 2. Illustration Placeholder */}
+      {/* 2. Illustration (UPDATED) */}
       <div className="flex justify-center mb-6">
-        {/* Placeholder Box */}
-        <div className="w-full max-w-[280px] h-40 bg-gray-100 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-gray-300 text-gray-400">
-          <span className="text-3xl mb-2">🖼️</span>
-          <span className="text-[10px] text-center px-4">
-             Area Ilustrasi Register<br/>
-             (Upload ke /public/images/)
-          </span>
+        <div className="relative w-full max-w-[280px] h-48"> {/* Container responsive */}
+          <Image
+            src="/regisil.png" // Aset dari folder public
+            alt="Register Illustration"
+            fill
+            className="object-contain"
+            priority
+          />
         </div>
       </div>
 
