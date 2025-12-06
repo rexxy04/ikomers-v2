@@ -11,8 +11,14 @@ export interface FilterOptions {
   rating?: number;
 }
 
+export interface ProductVariant {
+  label: string; // Contoh: "Merah" atau "XL" atau "300ml"
+  value: string; // Contoh: "#FF0000" (Hex) atau "XL" (Text)
+}
+
 export interface Product {
   id: string;
+  sku: string;
   title: string;
   category: string;
   price: number;
@@ -21,6 +27,11 @@ export interface Product {
   description: string;
   stock: number;
   colors?: { name: string; hex: string }[];
+
+  // Sistem Varian Baru
+  variantType: "color" | "size" | "custom" | "none"; 
+  variants?: ProductVariant[];
+
   createdAt?: string;
   isFeatured?: boolean; // Field baru untuk Hero Banner
 }
@@ -30,7 +41,6 @@ export async function getProducts(): Promise<Product[]> {
   try {
     const productsRef = collection(db, "products");
     const q = query(productsRef, orderBy("createdAt", "desc"));
-    
     const querySnapshot = await getDocs(q);
     
     return querySnapshot.docs.map((doc) => {

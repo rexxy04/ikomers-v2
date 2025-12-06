@@ -5,14 +5,17 @@ import { getProducts, Product } from "@/lib/products";
 import { deleteProduct } from "@/lib/admin-products";
 import { Plus } from "lucide-react";
 import ProductTable from "@/components/features/admin/products/ProductTable";
-import AddProductForm from "@/components/features/admin/products/AddProductForm";
+// Pastikan import ini mengarah ke file ProductForm yang baru
+import ProductForm from "@/components/features/admin/products/AddProductForm"; 
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  
+  // State Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Fungsi Refresh Data
   const fetchProducts = async () => {
     setLoading(true);
     const data = await getProducts();
@@ -27,40 +30,55 @@ export default function AdminProductsPage() {
   const handleDelete = async (id: string) => {
     if (confirm("Yakin ingin menghapus produk ini?")) {
       await deleteProduct(id);
-      fetchProducts(); // Refresh setelah hapus
+      fetchProducts();
     }
+  };
+
+  // Handler Buka Modal Tambah
+  const handleAdd = () => {
+    setEditingProduct(null); // Kosongkan data
+    setIsModalOpen(true);
+  };
+
+  // Handler Buka Modal Edit (Dipanggil dari Tabel)
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product); // Isi data
+    setIsModalOpen(true);
   };
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in">
-      {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Produk</h1>
-          <p className="text-gray-500 mt-1">Kelola katalog barang toko Anda.</p>
+          <p className="text-gray-500 mt-1">Kelola katalog dan stok barang.</p>
         </div>
         <button 
-          onClick={() => setShowModal(true)}
+          onClick={handleAdd}
           className="flex items-center gap-2 bg-yellow-400 text-black font-bold px-5 py-3 rounded-xl hover:bg-yellow-500 shadow-md transition-all"
         >
           <Plus size={20} /> Tambah Produk
         </button>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="text-center py-20 text-gray-500">Memuat produk...</div>
       ) : (
-        <ProductTable products={products} onDelete={handleDelete} />
+        // Pass fungsi handleEdit ke ProductTable
+        <ProductTable 
+           products={products} 
+           onDelete={handleDelete} 
+           onEdit={handleEdit} // <--- Tambahan
+        />
       )}
 
-      {/* Modal Form (Muncul jika showModal true) */}
-      {showModal && (
-        <AddProductForm 
-          onCancel={() => setShowModal(false)} 
+      {isModalOpen && (
+        <ProductForm 
+          initialData={editingProduct} // Kirim data jika edit
+          onCancel={() => setIsModalOpen(false)} 
           onSuccess={() => {
-            setShowModal(false);
-            fetchProducts(); // Refresh data setelah sukses tambah
+            setIsModalOpen(false);
+            fetchProducts();
           }} 
         />
       )}
