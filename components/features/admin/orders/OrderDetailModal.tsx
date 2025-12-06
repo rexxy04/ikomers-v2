@@ -1,13 +1,22 @@
 "use client";
 
-import { X, Truck, CheckCircle, XCircle, Package } from "lucide-react";
-import { AdminOrder, updateOrderStatus } from "@/lib/admin-orders";
+import { X, Truck, CheckCircle, XCircle, Package, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { AdminOrder, updateOrderStatus } from "@/lib/admin-orders"; // Pastikan import interface AdminOrder benar (bisa dari lib/orders atau lib/admin-orders tergantung file anda sebelumnya)
+// Jika AdminOrder ada di lib/orders.ts, ganti import di atas menjadi: 
+// import { updateOrderStatus } from "@/lib/admin-orders"; 
+// import { AdminOrder } from "@/lib/orders";
+
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { useState } from "react";
 
+// Definisikan ulang tipe jika perlu, atau pastikan AdminOrder punya field paymentProof
+// interface ExtendedOrder extends AdminOrder {
+//   paymentProof?: string;
+// }
+
 interface Props {
-  order: AdminOrder;
+  order: any; // Pakai any dulu agar aman menerima field paymentProof
   onClose: () => void;
   onUpdate: () => void;
 }
@@ -21,8 +30,8 @@ export default function OrderDetailModal({ order, onClose, onUpdate }: Props) {
     setLoading(true);
     await updateOrderStatus(order.id, newStatus);
     setLoading(false);
-    onUpdate(); // Refresh data di parent
-    onClose();  // Tutup modal
+    onUpdate(); 
+    onClose();
   };
 
   return (
@@ -41,9 +50,9 @@ export default function OrderDetailModal({ order, onClose, onUpdate }: Props) {
         <div className="p-6 space-y-6">
           
           {/* 1. Status Action Bar */}
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-wrap gap-2 justify-between items-center">
-            <span className="text-sm font-bold text-gray-700 uppercase">Update Status:</span>
-            <div className="flex gap-2">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-3">
+            <span className="text-sm font-bold text-gray-700 uppercase">UPDATE STATUS:</span>
+            <div className="flex flex-wrap gap-2">
                <Button size="sm" variant="outline" onClick={() => handleChangeStatus("proses")} disabled={loading}>
                  <Package size={14} className="mr-1"/> Proses
                </Button>
@@ -58,6 +67,30 @@ export default function OrderDetailModal({ order, onClose, onUpdate }: Props) {
                </Button>
             </div>
           </div>
+
+          {/* --- FITUR BARU: CEK BUKTI TRANSFER --- */}
+          {order.paymentProof && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                  <div className="relative w-12 h-12 bg-gray-200 rounded-lg overflow-hidden border border-blue-100">
+                     <Image src={order.paymentProof} alt="Bukti" fill className="object-cover" />
+                  </div>
+                  <div>
+                     <h3 className="font-bold text-blue-900 text-sm">Bukti Transfer Masuk</h3>
+                     <p className="text-xs text-blue-600">User telah mengupload bukti bayar</p>
+                  </div>
+               </div>
+               
+               <a 
+                 href={order.paymentProof} 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors"
+               >
+                 <ImageIcon size={14} /> Lihat Foto
+               </a>
+            </div>
+          )}
 
           {/* 2. Info Pengiriman */}
           <div className="grid grid-cols-2 gap-6">
@@ -79,7 +112,6 @@ export default function OrderDetailModal({ order, onClose, onUpdate }: Props) {
               {order.items?.map((item: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-4 p-3 border border-gray-100 rounded-xl bg-white">
                   <div className="relative w-12 h-12 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                    {/* Fallback image jika item.image ada/tidak */}
                     <Image src={item.image} alt={item.title} fill className="object-cover" />
                   </div>
                   <div className="flex-1">

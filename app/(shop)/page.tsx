@@ -2,15 +2,16 @@ import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import HeroBanner from "@/components/features/home/HeroBanner";
 import ProductCard from "@/components/features/products/ProductCard";
-import { getProducts } from "@/lib/products";
+import { getProducts, getFeaturedProducts } from "@/lib/products";
 
 export default async function Home() {
   const products = await getProducts();
+  const featuredProducts = await getFeaturedProducts();
 
   return (
     <main className="min-h-screen pb-24 bg-white">
       <Header />
-      <HeroBanner />
+      <HeroBanner products={featuredProducts}/>
 
       {/* SECTION 1: PRODUK TERBARU */}
       <section className="px-5 mt-4">

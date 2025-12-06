@@ -10,6 +10,7 @@ export interface ProductFormState {
   colors: { name: string; hex: string }[];
   stock: number;
   imageFile: File | null;
+  isFeatured: boolean; // Field untuk status Banner Hero
 }
 
 // 1. Upload Gambar ke Firebase Storage
@@ -39,6 +40,7 @@ export async function createProduct(data: ProductFormState) {
     description: data.description,
     stock: data.stock,
     colors: data.colors,
+    isFeatured: data.isFeatured, // <--- PENTING: Simpan status featured ke database
     image: imageUrl,
     createdAt: serverTimestamp(),
   });
@@ -47,5 +49,5 @@ export async function createProduct(data: ProductFormState) {
 // 3. Hapus Produk
 export async function deleteProduct(id: string) {
   await deleteDoc(doc(db, "products", id));
-  // Note: Idealnya hapus juga gambar di Storage, tapi untuk MVP ini cukup data saja dulu.
+  // Note: Idealnya hapus juga gambar di Storage agar bersih
 }

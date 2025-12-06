@@ -1,7 +1,16 @@
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, getDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, query, orderBy, where, limit } from "firebase/firestore";
 
-// Update Interface: Pastikan createdAt tipenya string (atau undefined)
+// 1. DEFINISI INTERFACE
+export interface FilterOptions {
+  keyword: string;
+  minPrice?: number;
+  maxPrice?: number;
+  category?: string;
+  sortBy?: "newest" | "price_low" | "price_high" | "best_seller";
+  rating?: number;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -13,23 +22,14 @@ export interface Product {
   stock: number;
   colors?: { name: string; hex: string }[];
   createdAt?: string;
+  isFeatured?: boolean; // Field baru untuk Hero Banner
 }
 
-//Filter interface
-export interface FilterOptions {
-  keyword: string;
-  minPrice?: number;
-  maxPrice?: number;
-  category?: string;
-  sortBy?: "newest" | "price_low" | "price_high" | "best_seller";
-  rating?: number;
-}
-
-// 1. Ambil Semua Produk
+// 2. AMBIL SEMUA PRODUK
 export async function getProducts(): Promise<Product[]> {
   try {
     const productsRef = collection(db, "products");
-    const q = query(productsRef, orderBy("createdAt", "desc")); // Urutkan dari yg terbaru
+    const q = query(productsRef, orderBy("createdAt", "desc"));
     
     const querySnapshot = await getDocs(q);
     
@@ -38,7 +38,6 @@ export async function getProducts(): Promise<Product[]> {
       return {
         id: doc.id,
         ...data,
-        // KONVERSI TIMESTAMP KE STRING ISO
         createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
       };
     }) as Product[];
@@ -48,7 +47,7 @@ export async function getProducts(): Promise<Product[]> {
   }
 }
 
-// 2. Ambil 1 Produk by ID
+// 3. AMBIL 1 PRODUK BY ID
 export async function getProductById(id: string): Promise<Product | null> {
   try {
     const docRef = doc(db, "products", id);
@@ -59,7 +58,6 @@ export async function getProductById(id: string): Promise<Product | null> {
       return { 
         id: docSnap.id, 
         ...data,
-        // KONVERSI TIMESTAMP KE STRING ISO (PENTING!)
         createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
       } as Product;
     } else {
@@ -71,12 +69,10 @@ export async function getProductById(id: string): Promise<Product | null> {
   }
 }
 
-//search funciton updated with filtering options
+// 4. CARI PRODUK (FILTER)
 export async function searchProducts(options: FilterOptions): Promise<Product[]> {
-  // Ambil semua produk (Client-side filtering strategy for MVP)
   let products = await getProducts();
   
-  // A. Filter Keyword (Nama & Kategori)
   if (options.keyword) {
     const lowerKeyword = options.keyword.toLowerCase();
     products = products.filter((p) => 
@@ -85,37 +81,73 @@ export async function searchProducts(options: FilterOptions): Promise<Product[]>
     );
   }
 
-  // B. Filter Kategori Spesifik (dari Modal)
   if (options.category) {
     products = products.filter((p) => 
       p.category.toLowerCase() === options.category?.toLowerCase()
     );
   }
 
-  // C. Filter Harga Range
   if (options.minPrice !== undefined) {
     products = products.filter((p) => p.price >= (options.minPrice || 0));
   }
+  
   if (options.maxPrice !== undefined && options.maxPrice > 0) {
     products = products.filter((p) => p.price <= (options.maxPrice || 0));
   }
 
-  // D. Sorting
   if (options.sortBy) {
     products.sort((a, b) => {
       switch (options.sortBy) {
         case "price_low": return a.price - b.price;
         case "price_high": return b.price - a.price;
         case "newest": 
-           // Asumsi createdAt string ISO, kita bandingkan tanggal
            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
         default: return 0;
       }
     });
   }
 
-  // E. Rating (Nanti diimplementasikan jika data rating sudah real)
-  // if (options.rating) { ... }
-
   return products;
+}
+
+// 5. AMBIL PRODUK FEATURED (UNTUK HERO BANNER)
+export async function getFeaturedProducts(): Promise<Product[]> {
+  try {
+    const productsRef = collection(db, "products");
+    // Ambil produk yang isFeatured = true, urutkan terbaru, ambil max 5
+    const q = query(
+      productsRef, 
+      where("isFeatured", "==", true), 
+      orderBy("createdAt", "desc"), 
+      limit(5)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    
+    // Fallback: Jika tidak ada featured product, ambil 3 produk terbaru biasa
+    if (querySnapshot.empty) {
+       const qFallback = query(productsRef, orderBy("createdAt", "desc"), limit(3));
+       const fallbackSnap = await getDocs(qFallback);
+       return fallbackSnap.docs.map((doc) => {
+         const data = doc.data();
+         return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+         };
+       }) as Product[];
+    }
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+      };
+    }) as Product[];
+  } catch (error) {
+    console.error("Error fetching featured:", error);
+    return [];
+  }
 }
