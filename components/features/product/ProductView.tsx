@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"; 
 import Image from "next/image";
+// 1. PASTIKAN MessageCircle ADA DI SINI
 import { Minus, Plus, Star, MessageCircle } from "lucide-react"; 
 import ReviewCard from "./ReviewCard";
 import type { Product } from "@/lib/products";
@@ -9,7 +10,7 @@ import { useProductDetail } from "@/hooks/useProductDetail";
 import Button from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { getOrCreateChatRoom, sendMessage } from "@/lib/chat"; 
-import { subscribeToProductReviews, ReviewData } from "@/lib/reviews"; // Import Listener Review
+import { subscribeToProductReviews, ReviewData } from "@/lib/reviews";
 
 // --- Sub-Komponen ---
 
@@ -66,7 +67,7 @@ export default function ProductView({ product }: { product: Product }) {
   // STATE REVIEW REALTIME
   const [reviews, setReviews] = useState<ReviewData[]>([]);
 
-  // Subscribe Review saat halaman dibuka
+  // Subscribe Review
   useEffect(() => {
     const unsubscribe = subscribeToProductReviews(product.id, (data) => {
       setReviews(data);
@@ -74,11 +75,11 @@ export default function ProductView({ product }: { product: Product }) {
     return () => unsubscribe();
   }, [product.id]);
 
-  // Hitung Rata-rata Bintang
+  // Hitung Rata-rata
   const averageRating = useMemo(() => {
     if (reviews.length === 0) return 0;
     const total = reviews.reduce((sum, rev) => sum + rev.rating, 0);
-    return (total / reviews.length).toFixed(1); // 1 desimal (contoh: 4.5)
+    return (total / reviews.length).toFixed(1);
   }, [reviews]);
 
   // Logic Chat
@@ -120,7 +121,6 @@ export default function ProductView({ product }: { product: Product }) {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{product.title}</h1>
             
-            {/* RATING DINAMIS */}
             <div className="flex items-center gap-2 mt-1">
               <Star size={16} className="text-yellow-400 fill-yellow-400" />
               <span className="text-sm font-bold text-gray-900">
@@ -154,10 +154,8 @@ export default function ProductView({ product }: { product: Product }) {
             <div className="flex overflow-x-auto pb-4 -mx-6 px-6 no-scrollbar snap-x gap-3">
               {reviews.map((r) => (
                 <div key={r.id} className="snap-center min-w-[280px]">
-                   {/* Kita kirim props sesuai data Firestore ke ReviewCard */}
-                   {/* Pastikan ReviewCard menerima: name, rating, comment */}
                    <ReviewCard 
-                      name={r.userName} // Mapping userName -> name
+                      name={r.userName} 
                       rating={r.rating}
                       comment={r.comment}
                    />
@@ -170,12 +168,15 @@ export default function ProductView({ product }: { product: Product }) {
 
       {/* 3. Sticky Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-gray-100 px-6 py-4 pb-8 z-40 flex items-center gap-3">
+        
+        {/* TOMBOL CHAT */}
         <Button 
           variant="outline" 
           className="w-14 px-0 border-gray-300"
           onClick={handleChat}
           disabled={isSubmitting}
         >
+          {/* Ikon MessageCircle */}
           <MessageCircle size={24} className="text-gray-700" />
         </Button>
 
